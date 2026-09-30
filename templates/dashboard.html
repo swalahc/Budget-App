@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Dashboard - Finance Tracker</title>
+
+    <link
+        rel="stylesheet"
+        href="{{ url_for('static', filename='style.css') }}"
+    >
+
+</head>
+
+<body>
+
+    <nav class="navbar">
+
+        <div class="nav-title">
+            Finance Tracker
+        </div>
+
+        <div class="nav-right">
+
+            <span>
+                Welcome, {{ username }}
+            </span>
+
+            <a href="{{ url_for('logout') }}" class="logout-button">
+                Logout
+            </a>
+
+        </div>
+
+    </nav>
+
+
+    <main class="dashboard-container">
+
+        <h1>Dashboard</h1>
+
+
+        <!-- SUMMARY CARDS -->
+
+        <div class="summary-grid">
+
+            <div class="summary-card">
+
+                <h3>Total Income</h3>
+
+                <p id="total-income">
+                    $0.00
+                </p>
+
+            </div>
+
+
+            <div class="summary-card">
+
+                <h3>Total Expenses</h3>
+
+                <p id="total-expenses">
+                    $0.00
+                </p>
+
+            </div>
+
+
+            <div class="summary-card">
+
+                <h3>Balance</h3>
+
+                <p id="balance">
+                    $0.00
+                </p>
+
+            </div>
+
+        </div>
+
+
+        <!-- ADD TRANSACTION -->
+
+        <section class="section-card">
+
+            <h2 id="form-title">
+                Add Transaction
+            </h2>
+
+            <form id="transaction-form">
+
+                <input
+                    type="hidden"
+                    id="transaction-id"
+                >
+
+
+                <div class="form-grid">
+
+                    <div>
+
+                        <label>Type</label>
+
+                        <select id="type" required>
+
+                            <option value="income">
+                                Income
+                            </option>
+
+                            <option value="expense">
+                                Expense
+                            </option>
+
+                        </select>
+
+                    </div>
+
+
+                    <div>
+
+                        <label>Amount</label>
+
+                        <input
+                            type="number"
+                            id="amount"
+                            step="0.01"
+                            min="0.01"
+                            placeholder="0.00"
+                            required
+                        >
+
+                    </div>
+
+
+                    <div>
+
+                        <label>Category</label>
+
+                        <select id="category" required>
+
+                            <option value="Food">
+                                Food
+                            </option>
+
+                            <option value="Transportation">
+                                Transportation
+                            </option>
+
+                            <option value="Bills">
+                                Bills
+                            </option>
+
+                            <option value="Entertainment">
+                                Entertainment
+                            </option>
+
+                            <option value="Shopping">
+                                Shopping
+                            </option>
+
+                            <option value="Education">
+                                Education
+                            </option>
+
+                            <option value="Health">
+                                Health
+                            </option>
+
+                            <option value="Salary">
+                                Salary
+                            </option>
+
+                            <option value="Other">
+                                Other
+                            </option>
+
+                        </select>
+
+                    </div>
+
+
+                    <div>
+
+                        <label>Date</label>
+
+                        <input
+                            type="date"
+                            id="date"
+                            required
+                        >
+
+                    </div>
+
+                </div>
+
+
+                <div>
+
+                    <label>Description</label>
+
+                    <input
+                        type="text"
+                        id="description"
+                        placeholder="Example: Grocery shopping"
+                    >
+
+                </div>
+
+
+                <div class="form-buttons">
+
+                    <button type="submit" id="submit-button">
+                        Add Transaction
+                    </button>
+
+                    <button
+                        type="button"
+                        id="cancel-button"
+                        class="secondary-button"
+                        style="display: none;"
+                    >
+                        Cancel Edit
+                    </button>
+
+                </div>
+
+            </form>
+
+        </section>
+
+
+        <!-- TRANSACTIONS -->
+
+        <section class="section-card">
+
+            <div class="section-header">
+
+                <h2>
+                    Transaction History
+                </h2>
+
+                <button
+                    onclick="loadTransactions()"
+                    class="secondary-button"
+                >
+                    Refresh
+                </button>
+
+            </div>
+
+
+            <div class="table-container">
+
+                <table>
+
+                    <thead>
+
+                        <tr>
+
+                            <th>Date</th>
+
+                            <th>Description</th>
+
+                            <th>Category</th>
+
+                            <th>Type</th>
+
+                            <th>Amount</th>
+
+                            <th>Actions</th>
+
+                        </tr>
+
+                    </thead>
+
+                    <tbody id="transaction-table">
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+        </section>
+
+    </main>
+
+
+    <script src="{{ url_for('static', filename='script.js') }}">
+    </script>
+
+</body>
+
+</html>
