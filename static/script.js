@@ -1,11 +1,72 @@
 let transactions = [];
 
+// PB5 Transaction Categories enhancement by Ahmad Kanaan
+const incomeCategories = [
+    "Salary",
+    "Freelance",
+    "Other Income"
+];
+
+// PB5 Transaction Categories enhancement by Ahmad Kanaan
+const expenseCategories = [
+    "Food",
+    "Transportation",
+    "Bills",
+    "Entertainment",
+    "Shopping",
+    "Education",
+    "Health",
+    "Other"
+];
+// PB5 Transaction Categories enhancement by Ahmad Kanaan
+function updateCategoryOptions() {
+
+    const typeSelect =
+        document.getElementById("type");
+
+    const categorySelect =
+        document.getElementById("category");
+
+    const selectedType =
+        typeSelect.value;
+
+    const categories =
+        selectedType === "income"
+            ? incomeCategories
+            : expenseCategories;
+
+    categorySelect.innerHTML = "";
+
+    categories.forEach(category => {
+
+        const option =
+            document.createElement("option");
+
+        option.value = category;
+        option.textContent = category;
+
+        categorySelect.appendChild(option);
+
+    });
+
+}
 
 // ----------------------------------
 // PAGE LOAD
 // ----------------------------------
 
 document.addEventListener("DOMContentLoaded", function () {
+
+    // PB5 Transaction Categories enhancement by Ahmad Kanaan
+    document
+        .getElementById("type")
+        .addEventListener(
+            "change",
+            updateCategoryOptions
+        );
+
+    // PB5 Transaction Categories enhancement by Ahmad Kanaan
+    updateCategoryOptions();
 
     loadTransactions();
 
@@ -370,7 +431,8 @@ function editTransaction(id) {
         "type"
     ).value =
         transaction.type;
-
+    // PB5 Transaction Categories enhancement by Ahmad Kanaan
+    updateCategoryOptions();
 
     document.getElementById(
         "amount"
@@ -534,7 +596,8 @@ function resetForm() {
         new Date()
             .toISOString()
             .split("T")[0];
-
+    // PB5 Transaction Categories enhancement by Ahmad Kanaan
+    updateCategoryOptions();
 }
 
 
