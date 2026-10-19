@@ -72,7 +72,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     // Set today's date automatically
     document.getElementById("date").value =
-        new Date().toISOString().split("T")[0];
+        localDateString();
 
 
     document
@@ -83,6 +83,16 @@ document.addEventListener("DOMContentLoaded", function () {
     document
         .getElementById("cancel-button")
         .addEventListener("click", cancelEdit);
+
+    // Sprint 2 transaction filtering by Ahmad Kanaan
+    document
+        .getElementById("apply-filters")
+        .addEventListener("click", applyTransactionFilters);
+
+    // Sprint 2 transaction filtering by Ahmad Kanaan
+    document
+        .getElementById("clear-filters")
+        .addEventListener("click", clearTransactionFilters);
 
 });
 
@@ -105,7 +115,7 @@ async function loadTransactions() {
         transactions =
             await response.json();
 
-        displayTransactions();
+        applyTransactionFilters();
 
         updateSummary();
 
@@ -124,7 +134,7 @@ async function loadTransactions() {
 // DISPLAY TRANSACTIONS
 // ----------------------------------
 
-function displayTransactions() {
+function displayTransactions(visibleTransactions = transactions) {
 
     const table =
         document.getElementById(
@@ -134,7 +144,7 @@ function displayTransactions() {
     table.innerHTML = "";
 
 
-    if (transactions.length === 0) {
+    if (visibleTransactions.length === 0) {
 
         table.innerHTML = `
             <tr>
@@ -148,7 +158,7 @@ function displayTransactions() {
     }
 
 
-    transactions.forEach(transaction => {
+    visibleTransactions.forEach(transaction => {
 
         const row =
             document.createElement("tr");
@@ -229,26 +239,26 @@ function updateSummary() {
     let totalIncome = 0;
 
     let totalExpenses = 0;
+    // Sprint 2 spending calculation by Ahmad Kanaan
+    let monthlySpending = 0;
 
+    // Use the browser's local month, matching the date input.
+    const currentMonth = localDateString().slice(0, 7);
 
     transactions.forEach(transaction => {
-
-        const amount =
-            Number(transaction.amount);
-
+        const amount = Number(transaction.amount);
 
         if (transaction.type === "income") {
-
             totalIncome += amount;
-
         } else {
-
             totalExpenses += amount;
 
+            // Sprint 2 spending calculation by Ahmad Kanaan
+            if (transaction.date.startsWith(currentMonth)) {
+                monthlySpending += amount;
+            }
         }
-
     });
-
 
     const balance =
         totalIncome - totalExpenses;
@@ -270,6 +280,11 @@ function updateSummary() {
         "balance"
     ).textContent =
         `$${balance.toFixed(2)}`;
+    // Sprint 2 spending calculation by Ahmad Kanaan
+    document.getElementById(
+        "monthly-spending"
+    ).textContent =
+        `$${monthlySpending.toFixed(2)}`;
 
 }
 
@@ -541,7 +556,77 @@ async function deleteTransaction(id) {
     }
 
 }
+// ----------------------------------
+// SPRINT 2 TRANSACTION FILTERS
+// Ahmad Kanaan
+// ----------------------------------
 
+function applyTransactionFilters() {
+
+    const selectedCategory =
+        document.getElementById(
+            "filter-category"
+        ).value;
+
+    const startDate =
+        document.getElementById(
+            "filter-start-date"
+        ).value;
+
+    const endDate =
+        document.getElementById(
+            "filter-end-date"
+        ).value;
+
+
+    const filteredTransactions =
+        transactions.filter(transaction => {
+
+            const matchesCategory =
+                selectedCategory === "" ||
+                transaction.category === selectedCategory;
+
+            const matchesStartDate =
+                startDate === "" ||
+                transaction.date >= startDate;
+
+            const matchesEndDate =
+                endDate === "" ||
+                transaction.date <= endDate;
+
+
+            return (
+                matchesCategory &&
+                matchesStartDate &&
+                matchesEndDate
+            );
+
+        });
+
+
+    displayTransactions(filteredTransactions);
+
+}
+
+
+function clearTransactionFilters() {
+
+    document.getElementById(
+        "filter-category"
+    ).value = "";
+
+    document.getElementById(
+        "filter-start-date"
+    ).value = "";
+
+    document.getElementById(
+        "filter-end-date"
+    ).value = "";
+
+
+    displayTransactions();
+
+}
 
 // ----------------------------------
 // CANCEL EDIT
@@ -593,9 +678,7 @@ function resetForm() {
     document.getElementById(
         "date"
     ).value =
-        new Date()
-            .toISOString()
-            .split("T")[0];
+        localDateString();
     // PB5 Transaction Categories enhancement by Ahmad Kanaan
     updateCategoryOptions();
 }
@@ -610,4 +693,12 @@ function capitalize(text) {
     return text.charAt(0).toUpperCase()
         + text.slice(1);
 
+}
+
+// Keep dates and monthly spending in the user's local calendar day.
+function localDateString() {
+    const today = new Date();
+    const month = String(today.getMonth() + 1).padStart(2, "0");
+    const day = String(today.getDate()).padStart(2, "0");
+    return `${today.getFullYear()}-${month}-${day}`;
 }
