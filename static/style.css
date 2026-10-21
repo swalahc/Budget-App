@@ -402,3 +402,56 @@ tr:hover {
     }
 
 }
+
+
+/* -----------------------------
+   MONTHLY BUDGETS
+----------------------------- */
+
+#budget-message {
+    margin-top: 12px;
+    color: #1f3c88;
+}
+
+.budget-card {
+    background: #f7f9fc;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 20px;
+    margin-top: 15px;
+}
+
+.budget-card h3 {
+    margin-bottom: 12px;
+}
+
+.budget-card p {
+    margin-top: 10px;
+}
+
+.budget-card progress {
+    display: block;
+    width: 100%;
+    height: 18px;
+    margin-top: 12px;
+}
+
+.budget-safe {
+    color: #198754;
+    font-weight: bold;
+}
+
+.budget-warning {
+    color: #b77900;
+    font-weight: bold;
+}
+
+.budget-over {
+    color: #dc3545;
+    font-weight: bold;
+}
+
+#budget-submit:disabled {
+    opacity: 0.6;
+    cursor: wait;
+}

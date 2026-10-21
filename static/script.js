@@ -702,3 +702,175 @@ function localDateString() {
     const day = String(today.getDate()).padStart(2, "0");
     return `${today.getFullYear()}-${month}-${day}`;
 }
+
+
+/* -----------------------------
+   MONTHLY BUDGETS
+----------------------------- */
+
+function getCurrentMonth() {
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, "0");
+
+    return `${year}-${month}`;
+}
+
+
+document.addEventListener("DOMContentLoaded", function () {
+    const budgetMonth = document.getElementById("budget-month");
+    const budgetForm = document.getElementById("budget-form");
+
+    if (!budgetMonth || !budgetForm) return;
+
+    budgetMonth.value = getCurrentMonth();
+
+    loadBudgets();
+
+    budgetMonth.addEventListener("change", loadBudgets);
+
+    budgetForm.addEventListener("submit", saveBudget);
+});
+
+
+async function loadBudgets() {
+    const month = document.getElementById("budget-month").value;
+    const budgetList = document.getElementById("budget-list");
+
+    if (!month) {
+        budgetList.textContent = "Please select a month.";
+        return;
+    }
+
+    budgetList.textContent = "Loading budgets...";
+
+    try {
+        const response = await fetch(
+            `/api/budgets?month=${encodeURIComponent(month)}`
+        );
+
+        const budgets = await response.json();
+
+        if (!response.ok) {
+            throw new Error(budgets.error || "Could not load budgets.");
+        }
+
+        renderBudgets(budgets);
+
+    } catch (error) {
+        budgetList.textContent = error.message;
+    }
+}
+
+
+function renderBudgets(budgets) {
+    const budgetList = document.getElementById("budget-list");
+    budgetList.replaceChildren();
+
+    if (budgets.length === 0) {
+        const message = document.createElement("p");
+        message.textContent = "No budgets created for this month yet.";
+        budgetList.appendChild(message);
+        return;
+    }
+
+    budgets.forEach(budget => {
+        const card = document.createElement("div");
+        card.className = "budget-card";
+
+        const title = document.createElement("h3");
+        title.textContent = budget.category;
+
+        const details = document.createElement("p");
+        details.textContent =
+            `$${Number(budget.spent).toFixed(2)} spent of ` +
+            `$${Number(budget.amount).toFixed(2)}`;
+
+        const remaining = document.createElement("p");
+        remaining.textContent =
+            `Remaining: $${Number(budget.remaining).toFixed(2)}`;
+
+        const progress = document.createElement("progress");
+        progress.max = 100;
+        progress.value = Math.min(
+            100,
+            Math.max(0, Number(budget.percentage))
+        );
+        progress.setAttribute(
+            "aria-label",
+            `${budget.category} budget used`
+        );
+
+        const percentage = document.createElement("p");
+        percentage.textContent =
+            `${Number(budget.percentage).toFixed(1)}% used`;
+
+        if (budget.percentage >= 100) {
+            percentage.className = "budget-over";
+        } else if (budget.percentage >= 80) {
+            percentage.className = "budget-warning";
+        } else {
+            percentage.className = "budget-safe";
+        }
+
+        card.append(
+            title,
+            details,
+            progress,
+            percentage,
+            remaining
+        );
+
+        budgetList.appendChild(card);
+    });
+}
+
+
+async function saveBudget(event) {
+    event.preventDefault();
+
+    const category = document.getElementById("budget-category").value;
+    const month = document.getElementById("budget-month").value;
+    const amount = document.getElementById("budget-amount").value;
+    const message = document.getElementById("budget-message");
+    const submitButton = document.getElementById("budget-submit");
+
+    if (!month || !amount || Number(amount) <= 0) {
+        message.textContent = "Enter a month and a valid positive budget.";
+        return;
+    }
+
+    submitButton.disabled = true;
+    message.textContent = "Saving budget...";
+
+    try {
+        const response = await fetch("/api/budgets", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                category: category,
+                month: month,
+                amount: amount
+            })
+        });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+            throw new Error(result.error || "Could not save budget.");
+        }
+
+        message.textContent = result.message;
+        document.getElementById("budget-amount").value = "";
+
+        await loadBudgets();
+
+    } catch (error) {
+        message.textContent = error.message;
+    } finally {
+        submitButton.disabled = false;
+    }
+}
+
