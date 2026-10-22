@@ -455,3 +455,116 @@ tr:hover {
     opacity: 0.6;
     cursor: wait;
 }
+
+
+/* -----------------------------
+   FINANCE TRACKER PAGE IMPROVEMENTS
+----------------------------- */
+
+.page-description {
+    color: #666;
+    margin-top: -15px;
+    margin-bottom: 25px;
+    line-height: 1.5;
+}
+
+/* Display all four dashboard summary cards. */
+.summary-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+/* Budget page layout */
+.budget-form-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.budget-section-header {
+    align-items: flex-end;
+    gap: 20px;
+    flex-wrap: wrap;
+}
+
+.budget-section-header h2 {
+    margin-bottom: 8px;
+}
+
+.muted-text {
+    color: #666;
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+.month-filter {
+    width: 210px;
+    max-width: 100%;
+}
+
+.month-filter input {
+    margin-bottom: 0;
+}
+
+#budget-message {
+    margin-top: 14px;
+    line-height: 1.5;
+    color: #1f3c88;
+}
+
+#budget-submit:disabled {
+    opacity: 0.6;
+    cursor: wait;
+}
+
+/* Budget progress indicators */
+#budget-table progress {
+    display: block;
+    width: 110px;
+    max-width: 100%;
+    height: 12px;
+    margin-top: 7px;
+}
+
+.budget-safe {
+    color: #198754;
+    font-weight: bold;
+}
+
+.budget-warning {
+    color: #b77900;
+    font-weight: bold;
+}
+
+.budget-over {
+    color: #dc3545;
+    font-weight: bold;
+}
+
+@media (max-width: 900px) {
+    .summary-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .budget-form-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 600px) {
+    .summary-grid,
+    .budget-form-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .nav-right {
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+
+    .budget-section-header {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .month-filter {
+        width: 100%;
+    }
+}

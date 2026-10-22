@@ -1,0 +1,122 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Monthly Budgets - Finance Tracker</title>
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body>
+    <nav class="navbar">
+        <div class="nav-title">Finance Tracker</div>
+
+        <div class="nav-right">
+            <span>Welcome, {{ username }}</span>
+            <a href="{{ url_for('dashboard') }}" class="logout-button">
+                Dashboard
+            </a>
+            <a href="{{ url_for('logout') }}" class="logout-button">
+                Logout
+            </a>
+        </div>
+    </nav>
+
+    <main class="dashboard-container">
+        <h1>Monthly Budgets</h1>
+        <p class="page-description">
+            Set spending limits and monitor your expenses by category.
+        </p>
+
+        <!-- CREATE OR UPDATE A BUDGET -->
+        <section class="section-card">
+            <h2>Set a Monthly Budget</h2>
+
+            <form id="budget-form">
+                <div class="form-grid budget-form-grid">
+                    <div>
+                        <label for="budget-month">Budget Month</label>
+                        <input type="month" id="budget-month" required>
+                    </div>
+
+                    <div>
+                        <label for="budget-category">Expense Category</label>
+                        <select id="budget-category" required>
+                            <option value="Food">Food</option>
+                            <option value="Transportation">Transportation</option>
+                            <option value="Bills">Bills</option>
+                            <option value="Entertainment">Entertainment</option>
+                            <option value="Shopping">Shopping</option>
+                            <option value="Education">Education</option>
+                            <option value="Health">Health</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label for="budget-amount">Budget Amount ($)</label>
+                        <input
+                            type="number"
+                            id="budget-amount"
+                            min="0.01"
+                            step="0.01"
+                            placeholder="300.00"
+                            required
+                        >
+                    </div>
+                </div>
+
+                <div class="form-buttons">
+                    <button type="submit" id="budget-submit">
+                        Save Budget
+                    </button>
+                </div>
+            </form>
+
+            <p id="budget-message" role="status" aria-live="polite"></p>
+        </section>
+
+        <!-- VIEW BUDGETS -->
+        <section class="section-card">
+            <div class="section-header budget-section-header">
+                <div>
+                    <h2>Your Budgets</h2>
+                    <p class="muted-text">
+                        Spending is calculated from recorded expense transactions.
+                    </p>
+                </div>
+
+                <div class="month-filter">
+                    <label for="view-month">View Month</label>
+                    <input type="month" id="view-month" required>
+                </div>
+            </div>
+
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Category</th>
+                            <th>Budget</th>
+                            <th>Spent</th>
+                            <th>Remaining</th>
+                            <th>Used</th>
+                        </tr>
+                    </thead>
+
+                    <tbody id="budget-table">
+                        <tr>
+                            <td colspan="5">Loading budgets...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+
+    <script src="{{ url_for('static', filename='budgets.js') }}"></script>
+</body>
+</html>
