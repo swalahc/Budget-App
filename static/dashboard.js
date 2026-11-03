@@ -1,99 +1,215 @@
+let spendingChart = null;
 
-document.addEventListener("DOMContentLoaded", loadDashboard);
+document.addEventListener("DOMContentLoaded", function () {
+    const monthInput = document.getElementById("dashboard-month");
+
+    const today = new Date();
+    const currentMonth =
+        today.getFullYear() + "-" +
+        String(today.getMonth() + 1).padStart(2, "0");
+
+    monthInput.value = currentMonth;
+
+    loadDashboard();
+
+    monthInput.addEventListener("change", loadDashboard);
+});
+
 
 async function loadDashboard() {
+    const month = document.getElementById("dashboard-month").value;
+
+    if (!month) {
+        return;
+    }
+
     try {
-        const response = await fetch("/api/transactions");
-        const transactions = await response.json();
+        const response = await fetch(
+            `/api/dashboard?month=${encodeURIComponent(month)}`
+        );
 
         if (!response.ok) {
-            throw new Error(transactions.error || "Could not load dashboard.");
+            throw new Error("Unable to load dashboard information.");
         }
 
-        let totalIncome = 0;
-        let totalExpenses = 0;
-        let monthlySpending = 0;
+        const data = await response.json();
 
-        const today = new Date();
-        const currentMonth =
-            `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}`;
-
-        transactions.forEach(transaction => {
-            const amount = Number(transaction.amount);
-
-            if (transaction.type === "income") {
-                totalIncome += amount;
-            } else {
-                totalExpenses += amount;
-
-                if (transaction.date.startsWith(currentMonth)) {
-                    monthlySpending += amount;
-                }
-            }
-        });
-
-        document.getElementById("total-income").textContent = formatMoney(totalIncome);
-        document.getElementById("total-expenses").textContent = formatMoney(totalExpenses);
-        document.getElementById("balance").textContent =
-            formatMoney(totalIncome - totalExpenses);
-        document.getElementById("monthly-spending").textContent =
-            formatMoney(monthlySpending);
-
-        displayRecentTransactions(transactions.slice(0, 5));
+        updateSummaryCards(data);
+        updateSpendingChart(data.category_spending || []);
+        displayBudgetAlerts(data.budget_alerts || []);
+        displayRecentTransactions(data.recent_transactions || []);
 
     } catch (error) {
         console.error("Dashboard error:", error);
 
+        document.getElementById("budget-alerts").innerHTML =
+            '<p class="error-message">Unable to load dashboard information.</p>';
+
         document.getElementById("recent-transactions").innerHTML =
-            '<tr><td colspan="5">Could not load dashboard information.</td></tr>';
+            '<tr><td colspan="5">Unable to load transactions.</td></tr>';
     }
 }
 
+
+function formatCurrency(amount) {
+    return Number(amount || 0).toLocaleString("en-CA", {
+        style: "currency",
+        currency: "CAD"
+    });
+}
+
+
+function updateSummaryCards(data) {
+    document.getElementById("total-income").textContent =
+        formatCurrency(data.monthly_income);
+
+    document.getElementById("total-expenses").textContent =
+        formatCurrency(data.monthly_expenses);
+
+    document.getElementById("balance").textContent =
+        formatCurrency(data.monthly_balance);
+
+    document.getElementById("monthly-spending").textContent =
+        formatCurrency(data.monthly_expenses);
+}
+
+
+function updateSpendingChart(categorySpending) {
+    const canvas = document.getElementById("spending-chart");
+    const emptyMessage = document.getElementById("chart-empty-message");
+
+    if (spendingChart) {
+        spendingChart.destroy();
+        spendingChart = null;
+    }
+
+    if (!categorySpending || categorySpending.length === 0) {
+        canvas.hidden = true;
+        emptyMessage.hidden = false;
+        return;
+    }
+
+    canvas.hidden = false;
+    emptyMessage.hidden = true;
+
+    const labels = categorySpending.map(item => item.category);
+    const amounts = categorySpending.map(item => item.amount);
+
+    spendingChart = new Chart(canvas, {
+        type: "doughnut",
+
+        data: {
+            labels: labels,
+
+            datasets: [{
+                label: "Expenses",
+                data: amounts,
+                borderWidth: 1
+            }]
+        },
+
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+
+            plugins: {
+                legend: {
+                    position: "bottom"
+                },
+
+                tooltip: {
+                    callbacks: {
+                        label: function (context) {
+                            return context.label + ": " +
+                                formatCurrency(context.raw);
+                        }
+                    }
+                }
+            }
+        }
+    });
+}
+
+
+function displayBudgetAlerts(alerts) {
+    const container = document.getElementById("budget-alerts");
+
+    if (!alerts || alerts.length === 0) {
+        container.innerHTML =
+            '<p class="budget-safe">All budgets are within their limits.</p>';
+        return;
+    }
+
+    container.innerHTML = "";
+
+    alerts.forEach(alert => {
+        const alertElement = document.createElement("div");
+
+        alertElement.className =
+            alert.status === "over"
+                ? "budget-alert budget-alert-over"
+                : "budget-alert budget-alert-warning";
+
+        const heading = document.createElement("strong");
+        heading.textContent =
+            alert.status === "over" ? "Over budget" : "Budget warning";
+
+        const message = document.createElement("p");
+        message.textContent = alert.message;
+
+        const details = document.createElement("p");
+        details.textContent =
+            "Spent: " + formatCurrency(alert.spent) +
+            " / Budget: " + formatCurrency(alert.budget) +
+            " (" + alert.percentage + "%)";
+
+        alertElement.appendChild(heading);
+        alertElement.appendChild(message);
+        alertElement.appendChild(details);
+
+        container.appendChild(alertElement);
+    });
+}
+
+
 function displayRecentTransactions(transactions) {
-    const table = document.getElementById("recent-transactions");
-    table.replaceChildren();
+    const tableBody = document.getElementById("recent-transactions");
 
-    if (transactions.length === 0) {
-        const row = document.createElement("tr");
-        const cell = document.createElement("td");
+    tableBody.innerHTML = "";
 
-        cell.colSpan = 5;
-        cell.textContent = "No transactions yet.";
-
-        row.appendChild(cell);
-        table.appendChild(row);
+    if (!transactions || transactions.length === 0) {
+        tableBody.innerHTML =
+            '<tr><td colspan="5">No transactions found.</td></tr>';
         return;
     }
 
     transactions.forEach(transaction => {
         const row = document.createElement("tr");
 
-        const values = [
-            transaction.date,
-            transaction.description || "-",
-            transaction.category,
-            transaction.type.charAt(0).toUpperCase() + transaction.type.slice(1)
-        ];
+        const dateCell = document.createElement("td");
+        dateCell.textContent = transaction.date;
 
-        values.forEach(value => {
-            const cell = document.createElement("td");
-            cell.textContent = value;
-            row.appendChild(cell);
-        });
+        const typeCell = document.createElement("td");
+        typeCell.textContent = transaction.type;
+
+        const categoryCell = document.createElement("td");
+        categoryCell.textContent = transaction.category;
+
+        const descriptionCell = document.createElement("td");
+        descriptionCell.textContent = transaction.description || "-";
 
         const amountCell = document.createElement("td");
-        amountCell.textContent =
-            `${transaction.type === "income" ? "+" : "-"}${formatMoney(transaction.amount)}`;
-        amountCell.className = transaction.type;
+        amountCell.textContent = formatCurrency(transaction.amount);
 
+        amountCell.className =
+            transaction.type === "income" ? "income" : "expense";
+
+        row.appendChild(dateCell);
+        row.appendChild(typeCell);
+        row.appendChild(categoryCell);
+        row.appendChild(descriptionCell);
         row.appendChild(amountCell);
-        table.appendChild(row);
-    });
-}
 
-function formatMoney(value) {
-    return new Intl.NumberFormat("en-CA", {
-        style: "currency",
-        currency: "CAD"
-    }).format(Number(value) || 0);
+        tableBody.appendChild(row);
+    });
 }

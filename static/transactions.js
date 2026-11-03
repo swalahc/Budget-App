@@ -1,11 +1,4 @@
-
 let transactions = [];
-
-const incomeCategories = [
-    "Salary",
-    "Freelance",
-    "Other Income"
-];
 
 const expenseCategories = [
     "Food",
@@ -18,242 +11,250 @@ const expenseCategories = [
     "Other"
 ];
 
-document.addEventListener("DOMContentLoaded", () => {
-    const typeSelect = document.getElementById("type");
-    const transactionForm = document.getElementById("transaction-form");
+const incomeCategories = [
+    "Salary",
+    "Freelance",
+    "Other Income"
+];
 
-    typeSelect.addEventListener("change", updateCategoryOptions);
-    transactionForm.addEventListener("submit", handleTransactionSubmit);
 
-    document.getElementById("cancel-button")
-        .addEventListener("click", cancelEdit);
+document.addEventListener("DOMContentLoaded", function () {
 
-    document.getElementById("apply-filters")
-        .addEventListener("click", applyTransactionFilters);
+    const form = document.getElementById("transaction-form");
+    const typeInput = document.getElementById("type");
+    const categoryInput = document.getElementById("category");
 
-    document.getElementById("clear-filters")
-        .addEventListener("click", clearTransactionFilters);
+    const today = new Date();
+    const localDate =
+        today.getFullYear() + "-" +
+        String(today.getMonth() + 1).padStart(2, "0") + "-" +
+        String(today.getDate()).padStart(2, "0");
 
-    document.getElementById("refresh-transactions")
-        .addEventListener("click", loadTransactions);
+    document.getElementById("date").value = localDate;
 
     updateCategoryOptions();
-
-    document.getElementById("date").value = localDateString();
-
     loadTransactions();
+
+    typeInput.addEventListener("change", updateCategoryOptions);
+
+    form.addEventListener("submit", saveTransaction);
+
+    document.getElementById("cancel-button")
+        .addEventListener("click", resetForm);
+
+    document.getElementById("apply-filters")
+        .addEventListener("click", applyFilters);
+
+    document.getElementById("clear-filters")
+        .addEventListener("click", clearFilters);
 });
 
-function localDateString() {
-    const today = new Date();
-    const month = String(today.getMonth() + 1).padStart(2, "0");
-    const day = String(today.getDate()).padStart(2, "0");
 
-    return `${today.getFullYear()}-${month}-${day}`;
-}
-
-function updateCategoryOptions() {
+function updateCategoryOptions(selectedCategory = "") {
     const type = document.getElementById("type").value;
-    const categorySelect = document.getElementById("category");
 
-    const categories = type === "income"
-        ? incomeCategories
-        : expenseCategories;
+    const categories =
+        type === "income" ? incomeCategories : expenseCategories;
 
-    categorySelect.replaceChildren();
+    const categoryInput = document.getElementById("category");
+
+    categoryInput.innerHTML = "";
 
     categories.forEach(category => {
         const option = document.createElement("option");
+
         option.value = category;
         option.textContent = category;
-        categorySelect.appendChild(option);
+
+        categoryInput.appendChild(option);
+    });
+
+    if (categories.includes(selectedCategory)) {
+        categoryInput.value = selectedCategory;
+    }
+}
+
+
+function formatCurrency(amount) {
+    return Number(amount || 0).toLocaleString("en-CA", {
+        style: "currency",
+        currency: "CAD"
     });
 }
 
-async function loadTransactions() {
-    const table = document.getElementById("transaction-table");
-    table.innerHTML = '<tr><td colspan="6">Loading transactions...</td></tr>';
 
+async function loadTransactions() {
     try {
         const response = await fetch("/api/transactions");
-        const result = await response.json();
 
         if (!response.ok) {
-            throw new Error(result.error || "Could not load transactions.");
+            throw new Error("Unable to load transactions.");
         }
 
-        transactions = result;
-        displayTransactions();
+        transactions = await response.json();
+
+        displayTransactions(transactions);
 
     } catch (error) {
-        table.innerHTML = "";
-        const row = document.createElement("tr");
-        const cell = document.createElement("td");
-        cell.colSpan = 6;
-        cell.textContent = error.message;
-        row.appendChild(cell);
-        table.appendChild(row);
+        console.error(error);
+
+        document.getElementById("transaction-table").innerHTML =
+            '<tr><td colspan="6">Unable to load transactions.</td></tr>';
     }
 }
 
-function displayTransactions(list = transactions) {
-    const table = document.getElementById("transaction-table");
-    table.replaceChildren();
 
-    if (list.length === 0) {
-        const row = document.createElement("tr");
-        const cell = document.createElement("td");
+function displayTransactions(items) {
+    const tableBody = document.getElementById("transaction-table");
 
-        cell.colSpan = 6;
-        cell.textContent = "No transactions found.";
+    tableBody.innerHTML = "";
 
-        row.appendChild(cell);
-        table.appendChild(row);
+    if (!items || items.length === 0) {
+        tableBody.innerHTML =
+            '<tr><td colspan="6">No transactions found.</td></tr>';
         return;
     }
 
-    list.forEach(transaction => {
+    items.forEach(transaction => {
         const row = document.createElement("tr");
 
-        const values = [
-            transaction.date,
-            transaction.description || "-",
-            transaction.category,
-            capitalize(transaction.type)
-        ];
+        const dateCell = document.createElement("td");
+        dateCell.textContent = transaction.date;
 
-        values.forEach(value => {
-            const cell = document.createElement("td");
-            cell.textContent = value;
-            row.appendChild(cell);
-        });
+        const typeCell = document.createElement("td");
+        typeCell.textContent = transaction.type;
+
+        const categoryCell = document.createElement("td");
+        categoryCell.textContent = transaction.category;
+
+        const descriptionCell = document.createElement("td");
+        descriptionCell.textContent = transaction.description || "-";
 
         const amountCell = document.createElement("td");
-        amountCell.textContent =
-            `${transaction.type === "income" ? "+" : "-"}${formatMoney(transaction.amount)}`;
-        amountCell.className = transaction.type;
-        row.appendChild(amountCell);
+        amountCell.textContent = formatCurrency(transaction.amount);
+
+        amountCell.className =
+            transaction.type === "income" ? "income" : "expense";
 
         const actionsCell = document.createElement("td");
 
         const editButton = document.createElement("button");
         editButton.textContent = "Edit";
+        editButton.type = "button";
         editButton.className = "edit-button";
-        editButton.addEventListener("click", () => editTransaction(transaction.id));
+
+        editButton.addEventListener("click", function () {
+            editTransaction(transaction.id);
+        });
 
         const deleteButton = document.createElement("button");
         deleteButton.textContent = "Delete";
+        deleteButton.type = "button";
         deleteButton.className = "delete-button";
-        deleteButton.addEventListener("click", () => deleteTransaction(transaction.id));
 
-        actionsCell.append(editButton, deleteButton);
+        deleteButton.addEventListener("click", function () {
+            deleteTransaction(transaction.id);
+        });
+
+        actionsCell.appendChild(editButton);
+        actionsCell.appendChild(deleteButton);
+
+        row.appendChild(dateCell);
+        row.appendChild(typeCell);
+        row.appendChild(categoryCell);
+        row.appendChild(descriptionCell);
+        row.appendChild(amountCell);
         row.appendChild(actionsCell);
 
-        table.appendChild(row);
+        tableBody.appendChild(row);
     });
 }
 
-function applyTransactionFilters() {
-    const category = document.getElementById("filter-category").value;
-    const startDate = document.getElementById("filter-start-date").value;
-    const endDate = document.getElementById("filter-end-date").value;
 
-    if (startDate && endDate && startDate > endDate) {
-        showMessage("Start date cannot be after end date.");
-        return;
-    }
-
-    const filtered = transactions.filter(transaction => {
-        const matchesCategory = !category || transaction.category === category;
-        const matchesStart = !startDate || transaction.date >= startDate;
-        const matchesEnd = !endDate || transaction.date <= endDate;
-
-        return matchesCategory && matchesStart && matchesEnd;
-    });
-
-    displayTransactions(filtered);
-}
-
-function clearTransactionFilters() {
-    document.getElementById("filter-category").value = "";
-    document.getElementById("filter-start-date").value = "";
-    document.getElementById("filter-end-date").value = "";
-
-    displayTransactions();
-    showMessage("");
-}
-
-async function handleTransactionSubmit(event) {
+async function saveTransaction(event) {
     event.preventDefault();
 
-    const transactionId = document.getElementById("transaction-id").value;
+    const transactionId =
+        document.getElementById("transaction-id").value;
 
-    const data = {
+    const transaction = {
         type: document.getElementById("type").value,
         amount: document.getElementById("amount").value,
         category: document.getElementById("category").value,
-        description: document.getElementById("description").value,
-        date: document.getElementById("date").value
+        date: document.getElementById("date").value,
+        description: document.getElementById("description").value
     };
 
-    const submitButton = document.getElementById("submit-button");
-    submitButton.disabled = true;
+    const url = transactionId
+        ? `/api/transactions/${transactionId}`
+        : "/api/transactions";
+
+    const method = transactionId ? "PUT" : "POST";
 
     try {
-        const response = await fetch(
-            transactionId
-                ? `/api/transactions/${transactionId}`
-                : "/api/transactions",
-            {
-                method: transactionId ? "PUT" : "POST",
-                headers: {
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify(data)
-            }
-        );
+        const response = await fetch(url, {
+            method: method,
+
+            headers: {
+                "Content-Type": "application/json"
+            },
+
+            body: JSON.stringify(transaction)
+        });
 
         const result = await response.json();
 
         if (!response.ok) {
-            throw new Error(result.error || "Could not save transaction.");
+            throw new Error(result.error || "Unable to save transaction.");
         }
 
-        showMessage(result.message);
+        showMessage(result.message, "success");
+
         resetForm();
         await loadTransactions();
 
     } catch (error) {
-        showMessage(error.message);
-    } finally {
-        submitButton.disabled = false;
+        showMessage(error.message, "error");
     }
 }
+
 
 function editTransaction(id) {
     const transaction = transactions.find(item => item.id === id);
 
-    if (!transaction) return;
+    if (!transaction) {
+        return;
+    }
 
     document.getElementById("transaction-id").value = transaction.id;
     document.getElementById("type").value = transaction.type;
 
-    updateCategoryOptions();
+    updateCategoryOptions(transaction.category);
 
     document.getElementById("amount").value = transaction.amount;
-    document.getElementById("category").value = transaction.category;
-    document.getElementById("description").value = transaction.description || "";
     document.getElementById("date").value = transaction.date;
+    document.getElementById("description").value =
+        transaction.description || "";
 
-    document.getElementById("form-title").textContent = "Edit Transaction";
-    document.getElementById("submit-button").textContent = "Update Transaction";
+    document.getElementById("form-title").textContent =
+        "Edit Transaction";
+
+    document.getElementById("submit-button").textContent =
+        "Update Transaction";
+
     document.getElementById("cancel-button").hidden = false;
 
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    document.getElementById("transaction-form")
+        .scrollIntoView({ behavior: "smooth" });
 }
 
+
 async function deleteTransaction(id) {
-    if (!confirm("Are you sure you want to delete this transaction?")) {
+    const confirmed = confirm(
+        "Are you sure you want to delete this transaction?"
+    );
+
+    if (!confirmed) {
         return;
     }
 
@@ -265,46 +266,88 @@ async function deleteTransaction(id) {
         const result = await response.json();
 
         if (!response.ok) {
-            throw new Error(result.error || "Could not delete transaction.");
+            throw new Error(result.error || "Unable to delete transaction.");
         }
 
-        showMessage(result.message);
+        showMessage(result.message, "success");
+
         await loadTransactions();
 
     } catch (error) {
-        showMessage(error.message);
+        showMessage(error.message, "error");
     }
 }
 
-function cancelEdit() {
-    resetForm();
-    showMessage("");
-}
 
 function resetForm() {
     document.getElementById("transaction-form").reset();
+
     document.getElementById("transaction-id").value = "";
 
-    document.getElementById("form-title").textContent = "Add Transaction";
-    document.getElementById("submit-button").textContent = "Add Transaction";
-    document.getElementById("cancel-button").hidden = true;
+    const today = new Date();
+    const localDate =
+        today.getFullYear() + "-" +
+        String(today.getMonth() + 1).padStart(2, "0") + "-" +
+        String(today.getDate()).padStart(2, "0");
 
-    document.getElementById("date").value = localDateString();
+    document.getElementById("date").value = localDate;
+
+    document.getElementById("type").value = "expense";
 
     updateCategoryOptions();
+
+    document.getElementById("form-title").textContent =
+        "Add Transaction";
+
+    document.getElementById("submit-button").textContent =
+        "Add Transaction";
+
+    document.getElementById("cancel-button").hidden = true;
 }
 
-function showMessage(message) {
-    document.getElementById("transaction-message").textContent = message;
+
+function applyFilters() {
+    const category =
+        document.getElementById("filter-category").value;
+
+    const startDate =
+        document.getElementById("filter-start-date").value;
+
+    const endDate =
+        document.getElementById("filter-end-date").value;
+
+    const filtered = transactions.filter(transaction => {
+
+        const matchesCategory =
+            !category || transaction.category === category;
+
+        const matchesStartDate =
+            !startDate || transaction.date >= startDate;
+
+        const matchesEndDate =
+            !endDate || transaction.date <= endDate;
+
+        return matchesCategory && matchesStartDate && matchesEndDate;
+    });
+
+    displayTransactions(filtered);
 }
 
-function formatMoney(value) {
-    return new Intl.NumberFormat("en-CA", {
-        style: "currency",
-        currency: "CAD"
-    }).format(Number(value) || 0);
+
+function clearFilters() {
+    document.getElementById("filter-category").value = "";
+    document.getElementById("filter-start-date").value = "";
+    document.getElementById("filter-end-date").value = "";
+
+    displayTransactions(transactions);
 }
 
-function capitalize(value) {
-    return value.charAt(0).toUpperCase() + value.slice(1);
+
+function showMessage(message, type) {
+    const messageElement =
+        document.getElementById("transaction-message");
+
+    messageElement.textContent = message;
+    messageElement.className =
+        type === "success" ? "success-message" : "error-message";
 }

@@ -1,4 +1,3 @@
-
 from flask import Flask, render_template, request, redirect, url_for, session, jsonify
 import sqlite3
 import math
@@ -422,6 +421,126 @@ def delete_transaction(transaction_id):
         return jsonify({"error": "Transaction not found"}), 404
 
     return jsonify({"message": "Transaction deleted successfully"})
+
+
+# -----------------------------
+# DASHBOARD SUMMARY
+# -----------------------------
+
+@app.route("/api/dashboard", methods=["GET"])
+def get_dashboard_summary():
+    if not logged_in():
+        return jsonify({"error": "Not logged in"}), 401
+
+    month = request.args.get("month", datetime.now().strftime("%Y-%m"))
+    if not valid_month(month):
+        return jsonify({"error": "Select a valid month"}), 400
+
+    user_id = session["user_id"]
+    connection = get_db()
+
+    monthly_totals = connection.execute("""
+        SELECT
+            COALESCE(SUM(CASE WHEN type = 'income' THEN amount ELSE 0 END), 0) AS income,
+            COALESCE(SUM(CASE WHEN type = 'expense' THEN amount ELSE 0 END), 0) AS expenses
+        FROM transactions
+        WHERE user_id = ? AND substr(date, 1, 7) = ?
+    """, (user_id, month)).fetchone()
+
+    all_time_totals = connection.execute("""
+        SELECT
+            COALESCE(SUM(CASE WHEN type = 'income' THEN amount ELSE 0 END), 0) AS income,
+            COALESCE(SUM(CASE WHEN type = 'expense' THEN amount ELSE 0 END), 0) AS expenses
+        FROM transactions
+        WHERE user_id = ?
+    """, (user_id,)).fetchone()
+
+    category_rows = connection.execute("""
+        SELECT category, COALESCE(SUM(amount), 0) AS amount
+        FROM transactions
+        WHERE user_id = ?
+          AND type = 'expense'
+          AND substr(date, 1, 7) = ?
+        GROUP BY category
+        ORDER BY amount DESC
+    """, (user_id, month)).fetchall()
+
+    budgets = connection.execute("""
+        SELECT b.category, b.amount,
+               COALESCE(SUM(t.amount), 0) AS spent
+        FROM budgets b
+        LEFT JOIN transactions t
+          ON t.user_id = b.user_id
+         AND t.category = b.category
+         AND t.type = 'expense'
+         AND substr(t.date, 1, 7) = b.month
+        WHERE b.user_id = ? AND b.month = ?
+        GROUP BY b.id, b.category, b.amount
+        ORDER BY b.category
+    """, (user_id, month)).fetchall()
+
+    recent = connection.execute("""
+        SELECT id, type, amount, category, description, date
+        FROM transactions
+        WHERE user_id = ?
+        ORDER BY date DESC, id DESC
+        LIMIT 5
+    """, (user_id,)).fetchall()
+
+    connection.close()
+
+    monthly_income = float(monthly_totals["income"])
+    monthly_expenses = float(monthly_totals["expenses"])
+    all_income = float(all_time_totals["income"])
+    all_expenses = float(all_time_totals["expenses"])
+
+    alerts = []
+    for budget in budgets:
+        budget_amount = float(budget["amount"])
+        spent = float(budget["spent"])
+        percentage = (spent / budget_amount * 100) if budget_amount else 0
+
+        if percentage >= 100:
+            status = "over"
+            message = f"{budget['category']} is over its monthly budget."
+        elif percentage >= 80:
+            status = "warning"
+            message = f"{budget['category']} has used {percentage:.1f}% of its monthly budget."
+        else:
+            continue
+
+        alerts.append({
+            "category": budget["category"],
+            "budget": budget_amount,
+            "spent": spent,
+            "percentage": round(percentage, 1),
+            "status": status,
+            "message": message
+        })
+
+    return jsonify({
+        "month": month,
+        "monthly_income": monthly_income,
+        "monthly_expenses": monthly_expenses,
+        "monthly_balance": monthly_income - monthly_expenses,
+        "all_time_balance": all_income - all_expenses,
+        "category_spending": [
+            {"category": row["category"], "amount": float(row["amount"])}
+            for row in category_rows
+        ],
+        "budget_alerts": alerts,
+        "recent_transactions": [
+            {
+                "id": row["id"],
+                "type": row["type"],
+                "amount": float(row["amount"]),
+                "category": row["category"],
+                "description": row["description"],
+                "date": row["date"]
+            }
+            for row in recent
+        ]
+    })
 
 
 # -----------------------------

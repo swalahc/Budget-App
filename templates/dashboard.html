@@ -1,50 +1,105 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard - Finance Tracker</title>
+    <title>Finance Tracker - Dashboard</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
-
 <body>
-    <nav class="navbar">
-        <div class="nav-title">Finance Tracker</div>
 
-        <div class="nav-right">
-            <span>Welcome, {{ username }}</span>
-            <a href="{{ url_for('transactions_page') }}" class="logout-button">Transactions</a>
-            <a href="{{ url_for('budgets_page') }}" class="logout-button">Monthly Budgets</a>
-            <a href="{{ url_for('logout') }}" class="logout-button">Logout</a>
-        </div>
-    </nav>
+   <nav class="navbar">
+    <div class="nav-title">Finance Tracker</div>
+
+    <div class="nav-right">
+        <span>Welcome, {{ username }}</span>
+
+        <a href="{{ url_for('dashboard') }}"
+           class="active">
+            Dashboard
+        </a>
+
+        <a href="{{ url_for('transactions_page') }}">
+            Transactions
+        </a>
+
+        <a href="{{ url_for('budgets_page') }}">
+            Monthly Budgets
+        </a>
+
+        <a href="{{ url_for('logout') }}" class="logout-button">
+            Logout
+        </a>
+    </div>
+</nav>
 
     <main class="dashboard-container">
-        <h1>Dashboard</h1>
-        <p class="page-description">
-            Get an overview of your income, expenses, and spending.
-        </p>
+
+        <div class="section-header">
+            <div>
+                <h1>Financial Dashboard</h1>
+            </div>
+
+            <div class="month-filter">
+                <label for="dashboard-month">Select month:</label>
+                <input type="month" id="dashboard-month">
+            </div>
+        </div>
 
         <section class="summary-grid">
+
             <div class="summary-card">
-                <h3>Total Income</h3>
+                <h3>Monthly Income</h3>
                 <p id="total-income">$0.00</p>
             </div>
 
             <div class="summary-card">
-                <h3>Total Expenses</h3>
+                <h3>Monthly Expenses</h3>
                 <p id="total-expenses">$0.00</p>
             </div>
 
             <div class="summary-card">
-                <h3>Balance</h3>
+                <h3>Monthly Balance</h3>
                 <p id="balance">$0.00</p>
             </div>
 
             <div class="summary-card">
-                <h3>This Month Spending</h3>
+                <h3>Monthly Spending</h3>
                 <p id="monthly-spending">$0.00</p>
+            </div>
+
+        </section>
+
+        <section class="section-card">
+            <div class="section-header">
+                <div>
+                    <h2>Spending by Category</h2>
+                    <p class="muted-text">
+                        See where your money is going this month.
+                    </p>
+                </div>
+            </div>
+
+            <div class="dashboard-chart-container">
+                <canvas id="spending-chart"></canvas>
+                <p id="chart-empty-message" class="muted-text" hidden>
+                    No expenses recorded for this month.
+                </p>
+            </div>
+        </section>
+
+        <section class="section-card">
+            <div class="section-header">
+                <div>
+                    <h2>Budget Alerts</h2>
+                    <p class="muted-text">
+                        Notifications for budgets approaching or exceeding their limits.
+                    </p>
+                </div>
+            </div>
+
+            <div id="budget-alerts">
+                <p class="muted-text">Loading budget alerts...</p>
             </div>
         </section>
 
@@ -52,11 +107,13 @@
             <div class="section-header">
                 <div>
                     <h2>Recent Transactions</h2>
-                    <p class="muted-text">Your five most recent transactions.</p>
+                    <p class="muted-text">
+                        Your five most recent transactions.
+                    </p>
                 </div>
 
-                <a href="{{ url_for('transactions_page') }}" class="logout-button">
-                    View All
+                <a href="{{ url_for('transactions_page') }}" class="secondary-button">
+                    View All Transactions
                 </a>
             </div>
 
@@ -65,9 +122,9 @@
                     <thead>
                         <tr>
                             <th>Date</th>
-                            <th>Description</th>
-                            <th>Category</th>
                             <th>Type</th>
+                            <th>Category</th>
+                            <th>Description</th>
                             <th>Amount</th>
                         </tr>
                     </thead>
@@ -80,8 +137,11 @@
                 </table>
             </div>
         </section>
+
     </main>
 
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="{{ url_for('static', filename='dashboard.js') }}"></script>
+
 </body>
 </html>
