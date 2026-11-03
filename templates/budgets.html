@@ -16,9 +16,15 @@
 
         <div class="nav-right">
             <span>Welcome, {{ username }}</span>
+
             <a href="{{ url_for('dashboard') }}" class="logout-button">
                 Dashboard
             </a>
+
+            <a href="{{ url_for('transactions_page') }}" class="logout-button">
+                Transactions
+            </a>
+
             <a href="{{ url_for('logout') }}" class="logout-button">
                 Logout
             </a>
@@ -27,11 +33,11 @@
 
     <main class="dashboard-container">
         <h1>Monthly Budgets</h1>
+
         <p class="page-description">
             Set spending limits and monitor your expenses by category.
         </p>
 
-        <!-- CREATE OR UPDATE A BUDGET -->
         <section class="section-card">
             <h2>Set a Monthly Budget</h2>
 
@@ -79,7 +85,6 @@
             <p id="budget-message" role="status" aria-live="polite"></p>
         </section>
 
-        <!-- VIEW BUDGETS -->
         <section class="section-card">
             <div class="section-header budget-section-header">
                 <div>

@@ -1,7 +1,9 @@
+
 from flask import Flask, render_template, request, redirect, url_for, session, jsonify
 import sqlite3
 import math
 import re
+from datetime import datetime
 from werkzeug.security import generate_password_hash, check_password_hash
 
 app = Flask(__name__)
@@ -10,23 +12,13 @@ app.secret_key = "finance-app-secret-key"
 DATABASE = "database.db"
 
 EXPENSE_CATEGORIES = [
-    "Food",
-    "Transportation",
-    "Bills",
-    "Entertainment",
-    "Shopping",
-    "Education",
-    "Health",
-    "Other"
+    "Food", "Transportation", "Bills", "Entertainment",
+    "Shopping", "Education", "Health", "Other"
 ]
 
 INCOME_CATEGORIES = [
-    "Salary",
-    "Freelance",
-    "Other Income"
+    "Salary", "Freelance", "Other Income"
 ]
-
-ALL_CATEGORIES = INCOME_CATEGORIES + EXPENSE_CATEGORIES
 
 
 # -----------------------------
@@ -80,6 +72,10 @@ def initialize_database():
     connection.close()
 
 
+def logged_in():
+    return "user_id" in session
+
+
 def valid_month(month):
     return (
         isinstance(month, str)
@@ -87,18 +83,28 @@ def valid_month(month):
     )
 
 
+def valid_date(date):
+    if not isinstance(date, str):
+        return False
+
+    try:
+        datetime.strptime(date, "%Y-%m-%d")
+        return True
+    except ValueError:
+        return False
+
+
 def valid_amount(value):
     try:
         amount = float(value)
+
         if not math.isfinite(amount) or amount <= 0:
             return None
+
         return amount
+
     except (ValueError, TypeError, OverflowError):
         return None
-
-
-def logged_in():
-    return "user_id" in session
 
 
 # -----------------------------
@@ -109,6 +115,7 @@ def logged_in():
 def home():
     if logged_in():
         return redirect(url_for("dashboard"))
+
     return redirect(url_for("login"))
 
 
@@ -146,6 +153,7 @@ def register():
                 (username, hashed_password)
             )
             connection.commit()
+
         except sqlite3.IntegrityError:
             connection.close()
             return render_template(
@@ -166,15 +174,18 @@ def login():
         password = request.form.get("password", "")
 
         connection = get_db()
+
         user = connection.execute(
             "SELECT * FROM users WHERE username = ?",
             (username,)
         ).fetchone()
+
         connection.close()
 
         if user and check_password_hash(user["password"], password):
             session["user_id"] = user["id"]
             session["username"] = user["username"]
+
             return redirect(url_for("dashboard"))
 
         return render_template(
@@ -192,7 +203,7 @@ def logout():
 
 
 # -----------------------------
-# DASHBOARD / BUDGET PAGE
+# PAGE ROUTES
 # -----------------------------
 
 @app.route("/dashboard")
@@ -202,6 +213,17 @@ def dashboard():
 
     return render_template(
         "dashboard.html",
+        username=session["username"]
+    )
+
+
+@app.route("/transactions")
+def transactions_page():
+    if not logged_in():
+        return redirect(url_for("login"))
+
+    return render_template(
+        "transactions.html",
         username=session["username"]
     )
 
@@ -279,12 +301,16 @@ def add_transaction():
     )
 
     if category not in allowed_categories:
-        return jsonify({"error": "Invalid category for this transaction type"}), 400
+        return jsonify({"error": "Invalid category"}), 400
 
-    if not isinstance(date, str) or not re.fullmatch(r"\d{4}-\d{2}-\d{2}", date):
+    if not valid_date(date):
         return jsonify({"error": "A valid transaction date is required"}), 400
 
+    if not isinstance(description, str):
+        return jsonify({"error": "Invalid description"}), 400
+
     connection = get_db()
+
     connection.execute("""
         INSERT INTO transactions
             (user_id, type, amount, category, description, date)
@@ -294,9 +320,10 @@ def add_transaction():
         transaction_type,
         amount,
         category,
-        description,
+        description.strip(),
         date
     ))
+
     connection.commit()
     connection.close()
 
@@ -332,10 +359,13 @@ def edit_transaction(transaction_id):
     )
 
     if category not in allowed_categories:
-        return jsonify({"error": "Invalid category for this transaction type"}), 400
+        return jsonify({"error": "Invalid category"}), 400
 
-    if not isinstance(date, str) or not re.fullmatch(r"\d{4}-\d{2}-\d{2}", date):
+    if not valid_date(date):
         return jsonify({"error": "A valid transaction date is required"}), 400
+
+    if not isinstance(description, str):
+        return jsonify({"error": "Invalid description"}), 400
 
     connection = get_db()
 
@@ -356,7 +386,7 @@ def edit_transaction(transaction_id):
         transaction_type,
         amount,
         category,
-        description,
+        description.strip(),
         date,
         transaction_id,
         session["user_id"]
@@ -406,7 +436,7 @@ def get_budgets():
     month = request.args.get("month", "")
 
     if not valid_month(month):
-        return jsonify({"error": "Select a valid month in YYYY-MM format"}), 400
+        return jsonify({"error": "Select a valid month"}), 400
 
     connection = get_db()
 

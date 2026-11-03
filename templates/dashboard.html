@@ -4,9 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
     <title>Dashboard - Finance Tracker</title>
-
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 
@@ -16,22 +14,18 @@
 
         <div class="nav-right">
             <span>Welcome, {{ username }}</span>
-            <a href="{{ url_for('budgets_page') }}" class="logout-button">
-                Monthly Budgets
-            </a>
-            <a href="{{ url_for('logout') }}" class="logout-button">
-                Logout
-            </a>
+            <a href="{{ url_for('transactions_page') }}" class="logout-button">Transactions</a>
+            <a href="{{ url_for('budgets_page') }}" class="logout-button">Monthly Budgets</a>
+            <a href="{{ url_for('logout') }}" class="logout-button">Logout</a>
         </div>
     </nav>
 
     <main class="dashboard-container">
         <h1>Dashboard</h1>
         <p class="page-description">
-            Track your income, expenses, and monthly spending.
+            Get an overview of your income, expenses, and spending.
         </p>
 
-        <!-- FINANCIAL SUMMARY -->
         <section class="summary-grid">
             <div class="summary-card">
                 <h3>Total Income</h3>
@@ -54,141 +48,16 @@
             </div>
         </section>
 
-        <!-- ADD / EDIT TRANSACTION -->
-        <section class="section-card">
-            <h2 id="form-title">Add Transaction</h2>
-
-            <form id="transaction-form">
-                <input type="hidden" id="transaction-id">
-
-                <div class="form-grid">
-                    <div>
-                        <label for="type">Type</label>
-                        <select id="type" required>
-                            <option value="expense">Expense</option>
-                            <option value="income">Income</option>
-                        </select>
-                    </div>
-
-                    <div>
-                        <label for="amount">Amount ($)</label>
-                        <input
-                            type="number"
-                            id="amount"
-                            min="0.01"
-                            step="0.01"
-                            placeholder="0.00"
-                            required
-                        >
-                    </div>
-
-                    <div>
-                        <label for="category">Category</label>
-                        <select id="category" required>
-                            <option value="Food">Food</option>
-                            <option value="Transportation">Transportation</option>
-                            <option value="Bills">Bills</option>
-                            <option value="Entertainment">Entertainment</option>
-                            <option value="Shopping">Shopping</option>
-                            <option value="Education">Education</option>
-                            <option value="Health">Health</option>
-                            <option value="Other">Other</option>
-                        </select>
-                    </div>
-
-                    <div>
-                        <label for="date">Date</label>
-                        <input type="date" id="date" required>
-                    </div>
-                </div>
-
-                <div>
-                    <label for="description">Description</label>
-                    <input
-                        type="text"
-                        id="description"
-                        placeholder="Example: Grocery shopping"
-                    >
-                </div>
-
-                <div class="form-buttons">
-                    <button type="submit" id="submit-button">
-                        Add Transaction
-                    </button>
-
-                    <button
-                        type="button"
-                        id="cancel-button"
-                        class="secondary-button"
-                        style="display: none;"
-                    >
-                        Cancel Edit
-                    </button>
-                </div>
-            </form>
-        </section>
-
-        <!-- TRANSACTION FILTERS -->
-        <section class="section-card">
-            <h2>Filter Transactions</h2>
-
-            <div class="form-grid">
-                <div>
-                    <label for="filter-category">Category</label>
-                    <select id="filter-category">
-                        <option value="">All Categories</option>
-                        <option value="Salary">Salary</option>
-                        <option value="Freelance">Freelance</option>
-                        <option value="Other Income">Other Income</option>
-                        <option value="Food">Food</option>
-                        <option value="Transportation">Transportation</option>
-                        <option value="Bills">Bills</option>
-                        <option value="Entertainment">Entertainment</option>
-                        <option value="Shopping">Shopping</option>
-                        <option value="Education">Education</option>
-                        <option value="Health">Health</option>
-                        <option value="Other">Other</option>
-                    </select>
-                </div>
-
-                <div>
-                    <label for="filter-start-date">Start Date</label>
-                    <input type="date" id="filter-start-date">
-                </div>
-
-                <div>
-                    <label for="filter-end-date">End Date</label>
-                    <input type="date" id="filter-end-date">
-                </div>
-            </div>
-
-            <div class="form-buttons">
-                <button type="button" id="apply-filters">
-                    Apply Filters
-                </button>
-
-                <button
-                    type="button"
-                    id="clear-filters"
-                    class="secondary-button"
-                >
-                    Clear Filters
-                </button>
-            </div>
-        </section>
-
-        <!-- TRANSACTION HISTORY -->
         <section class="section-card">
             <div class="section-header">
-                <h2>Transaction History</h2>
+                <div>
+                    <h2>Recent Transactions</h2>
+                    <p class="muted-text">Your five most recent transactions.</p>
+                </div>
 
-                <button
-                    type="button"
-                    onclick="loadTransactions()"
-                    class="secondary-button"
-                >
-                    Refresh
-                </button>
+                <a href="{{ url_for('transactions_page') }}" class="logout-button">
+                    View All
+                </a>
             </div>
 
             <div class="table-container">
@@ -200,13 +69,12 @@
                             <th>Category</th>
                             <th>Type</th>
                             <th>Amount</th>
-                            <th>Actions</th>
                         </tr>
                     </thead>
 
-                    <tbody id="transaction-table">
+                    <tbody id="recent-transactions">
                         <tr>
-                            <td colspan="6">Loading transactions...</td>
+                            <td colspan="5">Loading transactions...</td>
                         </tr>
                     </tbody>
                 </table>
@@ -214,6 +82,6 @@
         </section>
     </main>
 
-    <script src="{{ url_for('static', filename='script.js') }}"></script>
+    <script src="{{ url_for('static', filename='dashboard.js') }}"></script>
 </body>
 </html>
