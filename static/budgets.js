@@ -20,6 +20,13 @@ document.addEventListener("DOMContentLoaded", () => {
     budgetMonth.value = thisMonth;
     viewMonth.value = thisMonth;
 
+    let budgetLoadVersion = 0;
+    const budgetStatus = document.getElementById("budget-status");
+    window.addEventListener("focus", loadBudgets);
+    window.addEventListener("pageshow", event => {
+        if (event.persisted) loadBudgets();
+    });
+
     // Load budgets when the page opens.
     loadBudgets();
 
@@ -38,9 +45,12 @@ document.addEventListener("DOMContentLoaded", () => {
     budgetForm.addEventListener("submit", saveBudget);
 
     async function loadBudgets() {
+        const version = ++budgetLoadVersion;
+        budgetStatus.textContent = "Loading budget status...";
         const month = viewMonth.value;
 
         if (!month) {
+            budgetStatus.textContent = "Please select a month.";
             showTableMessage("Please select a month.");
             return;
         }
@@ -58,8 +68,23 @@ document.addEventListener("DOMContentLoaded", () => {
                 throw new Error(result.error || "Could not load budgets.");
             }
 
+            if (version !== budgetLoadVersion) return;
             renderBudgets(result);
+            // Include expenses without a category limit in the overall total.
+            try {
+                const transactionResponse = await fetch("/api/transactions");
+                if (!transactionResponse.ok) throw new Error("Could not load spending.");
+                const transactions = await transactionResponse.json();
+                if (version !== budgetLoadVersion) return;
+                SpendingInsights.renderBudget(budgetStatus,
+                    SpendingInsights.calculate(transactions, result, month));
+            } catch (error) {
+                if (version !== budgetLoadVersion) return;
+                budgetStatus.textContent = "Could not load budget status. Select the month again to retry.";
+            }
         } catch (error) {
+            if (version !== budgetLoadVersion) return;
+            budgetStatus.textContent = "Budget status unavailable.";
             showTableMessage(error.message || "Could not load budgets.");
         }
     }

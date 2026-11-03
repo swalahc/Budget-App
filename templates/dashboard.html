@@ -54,6 +54,18 @@
             </div>
         </section>
 
+        <!-- Sprint 3 PB12/PB13 — Ahmad Kanaan -->
+        <section class="section-card" aria-labelledby="spending-chart-title">
+            <h2 id="spending-chart-title">Spending by Category — This Month</h2>
+            <p class="muted-text">All current-month expenses, independent of transaction filters. Income is excluded.</p>
+            <div id="spending-chart" aria-live="polite">Loading spending...</div>
+        </section>
+        <section class="section-card" aria-labelledby="budget-status-title">
+            <h2 id="budget-status-title">This Month’s Budget Status</h2>
+            <p class="muted-text">Warnings begin at 80% of a budget. <a href="{{ url_for('budgets_page') }}">Manage monthly budgets</a></p>
+            <div id="budget-status" role="status" aria-live="polite">Loading budget status...</div>
+        </section>
+
         <!-- ADD / EDIT TRANSACTION -->
         <section class="section-card">
             <h2 id="form-title">Add Transaction</h2>
@@ -214,6 +226,7 @@
         </section>
     </main>
 
+    <script src="{{ url_for('static', filename='spending-insights.js') }}"></script>
     <script src="{{ url_for('static', filename='script.js') }}"></script>
 </body>
 </html>
