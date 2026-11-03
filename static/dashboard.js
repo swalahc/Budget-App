@@ -38,6 +38,7 @@ async function loadDashboard() {
         updateSpendingChart(data.category_spending || []);
         displayBudgetAlerts(data.budget_alerts || []);
         displayRecentTransactions(data.recent_transactions || []);
+        updateBudgetStatus(month);
 
     } catch (error) {
         console.error("Dashboard error:", error);
@@ -47,6 +48,35 @@ async function loadDashboard() {
 
         document.getElementById("recent-transactions").innerHTML =
             '<tr><td colspan="5">Unable to load transactions.</td></tr>';
+    }
+}
+
+
+async function updateBudgetStatus(month) {
+    const container = document.getElementById("budget-status");
+
+    try {
+        const [budgetResponse, transactionResponse] = await Promise.all([
+            fetch(`/api/budgets?month=${encodeURIComponent(month)}`),
+            fetch("/api/transactions")
+        ]);
+
+        if (!budgetResponse.ok || !transactionResponse.ok) {
+            throw new Error("Unable to load budget status.");
+        }
+
+        const budgets = await budgetResponse.json();
+        const transactions = await transactionResponse.json();
+
+        // Ignore stale responses if the month changed meanwhile.
+        if (document.getElementById("dashboard-month").value !== month) return;
+
+        SpendingInsights.renderBudget(
+            container,
+            SpendingInsights.calculate(transactions, budgets, month)
+        );
+    } catch (error) {
+        container.textContent = "Budget status unavailable.";
     }
 }
 

@@ -70,6 +70,12 @@
 
         </section>
 
+        <section class="dashboard-section" aria-labelledby="budget-status-title">
+            <h2 id="budget-status-title">Budget Status</h2>
+            <p class="muted-text">Warnings begin at 80% of a budget.</p>
+            <div id="budget-status" role="status" aria-live="polite">Loading budget status...</div>
+        </section>
+
         <section class="dashboard-section">
 
             <h2>Budget Overview</h2>
@@ -105,6 +111,7 @@
 
     </main>
 
+    <script src="{{ url_for('static', filename='spending-insights.js') }}"></script>
     <script src="{{ url_for('static', filename='budgets.js') }}"></script>
 
 </body>

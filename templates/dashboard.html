@@ -103,6 +103,12 @@
             </div>
         </section>
 
+        <section class="section-card" aria-labelledby="budget-status-title">
+            <h2 id="budget-status-title">Budget Status &amp; Remaining Budget</h2>
+            <p class="muted-text">Warnings begin at 80% of a budget. <a href="{{ url_for('budgets_page') }}">Manage monthly budgets</a></p>
+            <div id="budget-status" role="status" aria-live="polite">Loading budget status...</div>
+        </section>
+
         <section class="section-card">
             <div class="section-header">
                 <div>
@@ -141,6 +147,7 @@
     </main>
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="{{ url_for('static', filename='spending-insights.js') }}"></script>
     <script src="{{ url_for('static', filename='dashboard.js') }}"></script>
 
 </body>
