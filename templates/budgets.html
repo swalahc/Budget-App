@@ -95,6 +95,9 @@
                 </div>
             </div>
 
+            <!-- PB13 reuses the existing category limits and selected month. -->
+            <p class="muted-text">Warnings begin at 80% of a budget.</p>
+            <div id="budget-status" role="status" aria-live="polite">Loading budget status...</div>
             <div class="table-container">
                 <table>
                     <thead>
@@ -117,6 +120,7 @@
         </section>
     </main>
 
+    <script src="{{ url_for('static', filename='spending-insights.js') }}"></script>
     <script src="{{ url_for('static', filename='budgets.js') }}"></script>
 </body>
 </html>

@@ -568,3 +568,15 @@ tr:hover {
         width: 100%;
     }
 }
+
+/* Sprint 3 PB12/PB13 — Ahmad Kanaan. Native CSS bars; no chart dependency. */
+.spending-bars { list-style: none; padding: 0; margin: 18px 0 0; }
+.spending-bars li { margin: 14px 0; line-height: 1.5; }
+.spending-track { height: 16px; background: #e6ebf5; border-radius: 5px; margin-top: 5px; overflow: hidden; }
+.spending-bar { height: 100%; background: #1f3c88; border-radius: 5px; }
+.remaining-budget { font-size: 1.2rem; font-weight: bold; margin: 16px 0; }
+.budget-notice { padding: 12px; margin: 10px 0; border-left: 4px solid; line-height: 1.5; border-radius: 4px; }
+.budget-notice-safe { color: #14633e; background: #edf8f1; }
+.budget-notice-near { color: #805600; background: #fff7df; }
+.budget-notice-at-limit, .budget-notice-over { color: #a12430; background: #fff0f1; }
+#budget-status { margin: 16px 0; }

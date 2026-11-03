@@ -1,4 +1,5 @@
 let transactions = [];
+let transactionLoadVersion = 0;
 
 // PB5 Transaction Categories enhancement by Ahmad Kanaan
 const incomeCategories = [
@@ -102,6 +103,7 @@ document.addEventListener("DOMContentLoaded", function () {
 // ----------------------------------
 
 async function loadTransactions() {
+    const version = ++transactionLoadVersion;
 
     try {
 
@@ -109,18 +111,25 @@ async function loadTransactions() {
             await fetch("/api/transactions");
 
         if (!response.ok) {
-            return;
+            throw new Error("Could not load transactions.");
         }
 
-        transactions =
-            await response.json();
+        const loadedTransactions = await response.json();
+        if (version !== transactionLoadVersion) return;
+        transactions = loadedTransactions;
 
         applyTransactionFilters();
 
         updateSummary();
+        const month = localDateString().slice(0, 7);
+        SpendingInsights.renderChart(document.getElementById("spending-chart"),
+            SpendingInsights.calculate(transactions, [], month));
+        await updateBudgetStatus(month, version);
 
     } catch (error) {
-
+        if (version !== transactionLoadVersion) return;
+        document.getElementById("spending-chart").textContent = "Could not load spending. Please use Refresh to retry.";
+        document.getElementById("budget-status").textContent = "Budget status unavailable until transactions reload.";
         console.error(
             "Error loading transactions:",
             error
@@ -874,3 +883,27 @@ async function saveBudget(event) {
     }
 }
 
+
+// PB13: use the team's existing monthly category-budget API.
+async function updateBudgetStatus(month, version) {
+    const container = document.getElementById("budget-status");
+    container.textContent = "Loading budget status...";
+    try {
+        const response = await fetch(`/api/budgets?month=${encodeURIComponent(month)}`);
+        if (!response.ok) throw new Error("Could not load budgets.");
+        const budgets = await response.json();
+        if (version !== transactionLoadVersion) return;
+        SpendingInsights.renderBudget(container,
+            SpendingInsights.calculate(transactions, budgets, month));
+    } catch (error) {
+        if (version !== transactionLoadVersion) return;
+        container.textContent = "Could not load budget status. Please use Refresh to retry.";
+        console.error(error);
+    }
+}
+
+// Refresh after returning from a budget edit in another tab or browser history.
+window.addEventListener("focus", loadTransactions);
+window.addEventListener("pageshow", event => {
+    if (event.persisted) loadTransactions();
+});
